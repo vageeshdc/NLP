@@ -70,7 +70,59 @@ void set_word_freq(string name){
 
 }
 
+void populate_word_list(string fname){
 
+	ifstream infile(fname);
+	if(infile.is_open()){
+		while(infile.good()){
+			string tmp;
+			getline(infile,tmp,' ');
+
+			if(tmp[tmp.length()-2] == '\n') tmp[tmp.length()-2] = '\0';
+
+			insert_new_word(tmp);
+		}
+		infile.close();
+	}
+}
+
+void populate_corpus(string fname){
+	
+	ifstream infile(fname);
+	if(infile.is_open()){
+		while(infile.good()){
+			string tmp;
+			getline(infile,tmp,' ');
+
+			if(tmp[tmp.length()-2] == '\n') tmp[tmp.length()-2] = '\0';
+
+			set_word_freq(tmp);
+		}
+		infile.close();
+	}
+}
+
+void update_confusion_mat(string fname){
+
+	ifstream infile(fname);
+	if(infile.is_open()){
+
+		while(infile.good()){
+		
+			int i,j,k;
+			for(i = 0;i < 4;i++){
+				for(j = 0;j < 27;j++){
+					for(k = 0;k < 27;k++){
+						infile>>err_arr[i][j][k];
+					}
+				}
+			}
+
+		}
+
+		infile.close();
+	}
+}
 
 double get_score(error_pairs* word_err_list,string name){
 
