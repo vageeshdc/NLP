@@ -97,6 +97,13 @@ void generate_variants(string name){
 	/*
 	 * THis generates all names
 	 * perform the various operations and see if they are in the main name list
+	 *
+	 * TODO: make this idea of changes very scalable
+	 * implement the idea 0f smoothing the data and the counts
+	 * have a heuristic on how much can you actually change a word to get a new word
+	 * do this for all four variations
+	 * get the u/p format for words then for training text_corpus and testing the confusion mat
+	 *
 	 */
 	
 
