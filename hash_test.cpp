@@ -144,6 +144,8 @@ double get_score(error_pairs* word_err_list,string name){
 }
 
 
+
+
 void generate_variants(string name){
 	
 	/*
