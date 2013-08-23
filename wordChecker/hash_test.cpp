@@ -202,10 +202,8 @@ void populate_word_list(string fname){
 	if(infile.is_open()){
 		while(infile.good()){
 			string tmp;
-			getline(infile,tmp,' ');
-
-			if(tmp[tmp.length()-2] == '\n') tmp[tmp.length()-2] = '\0';
-
+			infile >> tmp;
+			
 			insert_new_word(tmp);
 		}
 		infile.close();
