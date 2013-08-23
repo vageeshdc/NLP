@@ -218,10 +218,8 @@ void populate_corpus(string fname){
 	if(infile.is_open()){
 		while(infile.good()){
 			string tmp;
-			getline(infile,tmp,' ');
-
-			if(tmp[tmp.length()-2] == '\n') tmp[tmp.length()-2] = '\0'; //XXX:check here!!;
-
+			infile >> tmp;
+			
 			set_word_freq(tmp);
 			
 			tot_word_count++;
