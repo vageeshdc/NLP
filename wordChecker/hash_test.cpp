@@ -146,7 +146,7 @@ int main(int argc,char** argv) {
     if(flags[0] & flags[1]){
         //we have to load from given corpus
         populate_word_list(string(file_names[0]));
-	populate_corpus(string(file_names[0]));
+	populate_corpus(string(file_names[1]));
     }
     else if(flags[4]){
 	build_umap(string(file_names[4]));
@@ -239,7 +239,8 @@ void serialize_umap(string fname) {
 void build_umap(string fname) {
 
     ifstream map_file(fname);
-
+    tot_word_count = 0;
+    
     if(map_file.is_open()) {
         while(map_file.good()) {
 
@@ -247,6 +248,8 @@ void build_umap(string fname) {
             int count_word;
 
             map_file>>name>>count_word;
+	    tot_word_count += count_word;
+	    
             word_list.insert(unordered_map<string,int>::value_type(name,count_word));
         }
         map_file.close();
