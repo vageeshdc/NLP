@@ -13,6 +13,7 @@
 #include <stdio.h>     /* for printf */
 #include <stdlib.h>    /* for exit */
 #include <unistd.h>    /* for getopt */
+#include <string.h>
 
 using namespace std;
 
@@ -160,6 +161,7 @@ int main(int argc,char** argv) {
 	update_confusion_mat(string(file_names[2]));
     }
     
+    cout<<"enter the strings:\n";
     solve_test_cases(); //get from stdin via redirect and run it!
     
     exit (0);
@@ -174,6 +176,9 @@ void solve_test_cases() {
     int t = 0;
     while(t < num_cases) {
 
+	name_list.clear();
+	score_list.clear();
+      
         string name;
         cin>>name;
 
@@ -287,7 +292,8 @@ void populate_word_list(string fname) {
         while(infile.good()) {
             string tmp;
             infile >> tmp;
-
+	    tmp.erase (remove(tmp.begin(), tmp.end(), '\''),tmp.end());
+	    
             insert_new_word(tmp);
         }
         infile.close();
@@ -303,10 +309,30 @@ void populate_corpus(string fname) {
         while(infile.good()) {
             string tmp;
             infile >> tmp;
-
-            set_word_freq(tmp);
-
-            tot_word_count++;
+	    
+	    char chars[] = "() ,.-;!?\n\"";
+	    char* tmp_name = (char*)tmp.c_str();
+	    char * pch = strtok (tmp_name,chars);
+	    
+	    while (pch != NULL)
+	    {
+		pch = strtok (NULL,chars);
+		
+		if(pch != 0){
+		    //printf("%s\n",pch);
+		    string tmp_ = string(pch);
+		    
+		    char chars_[] = "\'() ,.-;!?\n\"";
+		    for (unsigned int i = 0; i < strlen(chars_); ++i)
+		    {
+			tmp_.erase (remove(tmp_.begin(), tmp_.end(), chars[i]), tmp_.end());
+		    }
+			
+		    set_word_freq(tmp_);
+		    tot_word_count++;
+		}
+	    }
+	    
         }
         infile.close();
     }
