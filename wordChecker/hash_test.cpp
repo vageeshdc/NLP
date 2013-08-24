@@ -19,6 +19,7 @@ using namespace std;
 
 #define MAX_LEVEL 2
 #define MIN_TRESH 1E-6
+#define NO_WORD_LEVEL 3
 
 #define REQ_TRESH 1E-6
 #define MAX_CHOICE 2
@@ -179,11 +180,12 @@ void solve_test_cases() {
 	name_list.clear();
 	score_list.clear();
       
+	cout<<"Enter:";
         string name;
         cin>>name;
 
         //perform the search;
-        unordered_map<string,int>::iterator got_elem = word_list.find(name);
+	unordered_map<string,int>::iterator got_elem = word_list.find(name);
         if(got_elem == word_list.end()) {
             //element not there
             cout<<name;
@@ -389,7 +391,6 @@ double get_score(error_pairs word_err_list,string name) {
     return prob;
 }
 
-
 void generate_variants_add(string name,int level,double init_val) {
 
     /*This is to add a new char*/
@@ -540,8 +541,6 @@ void generate_variants_swap(string name,int level,double init_val) {
     }
 }
 
-
-
 void generate_variants(string name,int level,double init_val) {
 
     /*
@@ -555,80 +554,26 @@ void generate_variants(string name,int level,double init_val) {
      * get the u/p format for words then for training text_corpus and testing the confusion mat
      *
      */
+    //cout<<"level "<<level<<"\n";
+    if(level >= NO_WORD_LEVEL){
+	//cout<<"No matches\n";
+	return;
+    }
+    
     if((level > MAX_LEVEL)||( name_list.size() != 0 )) {
         return;
     }
 
+    
     generate_variants_add(name,level+1,init_val);
+    //cout<<"add ";
     generate_variants_sub(name,level+1,init_val);
+    //cout<<"sub ";
     generate_variants_del(name,level+1,init_val);
+    //cout<<"del ";
     generate_variants_swap(name,level+1,init_val);
-
-
-    /*
-    //deletion and swap
-    string tmp_name,cpy_name;
-    int i = 0;
-    error_pairs	elem;
-    double var_val;
-
-    vector<double> score_list;
-    vector<string> name_list;
-
-    while(i < name.length()){
-
-    	/// performing deletion
-    	tmp_name = name;
-    	tmp_name.erase(tmp_name.begin()+i);
-
-    	elem.p2 = name[i];
-
-    	if(i == 0){
-    		elem.p1 = '@';
-    	}
-    	else{
-    		elem.p1 = name[i-1];
-    	}
-
-    	elem.err_type = ERRORS::DEL;
-
-    	//call to the scoring thing
-    	var_val = check_variants_and_comp(tmp_name,elem);
-
-    	//pushing the lists
-    	if(var_val > -1){
-    		name_list.push_back(tmp_name);
-    		score_list.push_back(var_val);
-    	}
-
-    	/// Performing swaping
-    	cpy_name = name;
-    	char tmp_char = cpy_name.at(i);
-
-    	if(i < name.length()-1){
-    		cpy_name[i] = cpy_name[i+1];
-    		cpy_name[i+1] = tmp_char;
-    		elem.p1 = name[i];
-    		elem.p2 = name[i+1];
-    		elem.err_type = ERRORS::SWAP;
-
-    		//call to scored
-    		var_val = check_variants_and_comp(cpy_name,elem);
-
-    	//pushing the lists
-    		if(var_val > -1){
-    			name_list.push_back(tmp_name);
-    			score_list.push_back(var_val);
-    		}
-    	}
-
-    	i++;
-    }
-    */
-
+    //cout<<"swap ";
 }
-
-
 
 double check_variants_and_comp(string name,error_pairs epair) {
 
