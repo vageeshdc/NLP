@@ -24,7 +24,7 @@ using namespace std;
 #define REQ_TRESH 1E-6
 #define MAX_CHOICE 2
 
-double err_arr[4][27][27];
+double err_arr[4][27][26];
 
 enum ERRORS {SUBS,ADD,DEL,SWAP};
 
@@ -179,10 +179,17 @@ void solve_test_cases() {
 
 	name_list.clear();
 	score_list.clear();
+	ranked_list.clear();
       
 	cout<<"Enter:";
         string name;
         cin>>name;
+	
+	char chars_[] = "\'() ,.-;!?\n\"";
+	for (unsigned int i = 0; i < strlen(chars_); ++i)
+	{
+	    name.erase (remove(name.begin(), name.end(), chars_[i]), name.end());
+	}
 
         //perform the search;
 	unordered_map<string,int>::iterator got_elem = word_list.find(name);
@@ -294,6 +301,14 @@ void populate_word_list(string fname) {
         while(infile.good()) {
             string tmp;
             infile >> tmp;
+	    
+	    /*
+	    char chars_[] = "\'() ,.-;!?\n\"";
+	    for (unsigned int i = 0; i < strlen(chars_); ++i)
+	    {
+		tmp.erase (remove(tmp.begin(), tmp.end(), chars_[i]), tmp.end());
+	    }
+	    */
 	    tmp.erase (remove(tmp.begin(), tmp.end(), '\''),tmp.end());
 	    
             insert_new_word(tmp);
@@ -327,7 +342,7 @@ void populate_corpus(string fname) {
 		    char chars_[] = "\'() ,.-;!?\n\"";
 		    for (unsigned int i = 0; i < strlen(chars_); ++i)
 		    {
-			tmp_.erase (remove(tmp_.begin(), tmp_.end(), chars[i]), tmp_.end());
+			tmp_.erase (remove(tmp_.begin(), tmp_.end(), chars_[i]), tmp_.end());
 		    }
 			
 		    set_word_freq(tmp_);
@@ -350,7 +365,7 @@ void update_confusion_mat(string fname) {
             int i,j,k;
             for(i = 0; i < 4; i++) {
                 for(j = 0; j < 27; j++) {
-                    for(k = 0; k < 27; k++) {
+                    for(k = 0; k < 26; k++) {
                         infile>>err_arr[i][j][k];
                     }
                 }
@@ -378,13 +393,13 @@ double get_score(error_pairs word_err_list,string name) {
     k = word_err_list.p2;
 
     if(j == '@') {
-        j = 0;
+        j = 26;
     }
     else {
-        j = j-'a'+1;
+        j = j-'a';
     }
 
-    k = k - 'a'+1;
+    k = k - 'a';
 
     prob = (err_arr[i][j][k])*(0.5 + word_count)/(double)(word_list.size() + tot_word_count); //smoothing here
 
