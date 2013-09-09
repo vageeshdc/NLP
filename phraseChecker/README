@@ -1,0 +1,17 @@
+Phrase checking:
+THe idea that we will be usign here is that from the paper of bayesian hybrid spell checker Golding et al.
+The structure of the checker is as follows:
+
+Data : will use a trigram dataset
+	   indexing: we store the trigrams with count in an lexically indexed manner
+	   Word indexing: we will have another index indicating in which all n-gram the word is present ie the index from the above set
+
+POST : we need a post for tagging the n grams for collocation effort
+idea:
+	we shall use both the context and collocation
+	For each phrase where we have an ambiguity on the possible spellings, we see the n gram sorrounding the word
+	ie : {a,b,c,___,d,e,f} -- here we use the n-grams {{b,c,__},{c,__,d},{__,d,e}} for frequency based method
+	we shall use the possible choices {w1,w2,...,wn} and look at the context words around them and the POST of speech of ngrams around them
+	we match this with the n grams that we get ie the 3 variants and match up to which fits using a basyeian approach and log counts of ngram counts
+	
+issue: the speed and performance.. handling conflicting post's and poor context word choices	
