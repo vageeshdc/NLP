@@ -204,6 +204,24 @@ int main(int argc,char** argv){
     exit (0);
 }
 
+void get_stringip(char* var,int len){
+    char c;
+    c = getchar(); // safety ops!!
+    int idx = 0;
+    while(idx < len-1){
+	c = getchar();
+	if(c != '\n'){
+	    var[idx] = c;
+	}
+	else{
+	    var[idx] = 0;
+	    break;
+	}
+	idx++;
+    }
+    var[idx] = 0;
+}
+
 void phrase_corrector(){
     
     cout<<"enter the number strings and enter each string:\n";
@@ -218,11 +236,17 @@ void phrase_corrector(){
 	//cin.read(phrase,2047);// reading into a fixed buffer
 	//cin >> phrase; - this fails
 	cout << "New word :: ";
-	cin.clear(); cin.ignore(INT_MAX,'\n'); //clearing the input buffers!!
+	//cin.clear(); cin.ignore(INT_MAX,'\n'); //clearing the input buffers!!
 	
-	getline(cin,str_phrase);
-	strncpy(phrase, str_phrase.c_str(), sizeof(phrase));
-	phrase[sizeof(phrase) - 1] = 0;
+	//getline(cin,str_phrase);
+	//strncpy(phrase, str_phrase.c_str(), sizeof(phrase));
+	//phrase[sizeof(phrase) - 1] = 0;
+	get_stringip(phrase,2048);
+	
+	if(strlen(phrase) == 0){
+	    cout << "Empty word\n";
+	    continue;
+	}
 	
 	cout << " : ";
 	

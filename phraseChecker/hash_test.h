@@ -109,6 +109,8 @@ template <class T> int compare_vals (const void *a, const void *b);//for double 
 void build_ngram(string fname,int gram_val);
 void load_serialized_ngram(string fname,int ngram);
 void serialize_ngram(string fname,int ngram);
+//handling special input
+void get_stringip(char* var,int len);
 // the correction i/p here
 void phrase_corrector();
 
