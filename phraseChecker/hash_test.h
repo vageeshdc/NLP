@@ -12,6 +12,7 @@
 #include <stdlib.h>    /* for exit */
 #include <unistd.h>    /* for getopt */
 #include <string.h>
+#include <climits>
 
 using namespace std;
 
@@ -106,6 +107,9 @@ double get_score(string sub_phrase,int num_tok);
 template <class T> int get_max_element(vector<T> elems);
 template <class T> int compare_vals (const void *a, const void *b);//for double value comparision
 void build_ngram(string fname,int gram_val);
+void load_serialized_ngram(string fname,int ngram);
 void serialize_ngram(string fname,int ngram);
+// the correction i/p here
+void phrase_corrector();
 
 #endif

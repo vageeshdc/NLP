@@ -58,24 +58,184 @@ int main_sqlite3_test(int argc, char* argv[]){
 }
 */
 
+int main(int argc,char** argv){
+    int c;
+    int digit_optind = 0;
+    /*
+     *  a -- the dictionary eg /usr/share/dict/words file of dictionary entries
+     *  b -- the corpus
+     *  c -- update the matrix
+     *  d -- dump the hash map to given file
+     *  e -- load using given hash table
+     *  f -- load the N gram file
+     *  g -- load the hash table
+     *  h -- dump the hash table
+     *
+     * an array to find out the state...
+     */
 
+    char* file_names[8];
+    bool flags[] = {false,false,false,false,false,false,false,false};
 
-int main(){
+    while ( (c = getopt(argc, argv, "a:b:c:d:e:f:g:h:")) != -1) {
+        int this_option_optind = optind ? optind : 1;
+        switch (c) {
+        case 'a':
+            file_names[0] = optarg;
+            flags[0] = true;
+            break;
+        case 'b':
+            file_names[1] = optarg;
+            flags[1] = true;
+            break;
+        case 'c':
+            file_names[2] = optarg;
+            flags[2] = true;
+            break;
+        case 'd':
+            file_names[3] = optarg;
+            flags[3] = true;
+            break;
+        case 'e':
+            file_names[4] = optarg;
+            flags[4] = true;
+            break;
+	case 'f':
+	    file_names[5] = optarg;
+            flags[5] = true;
+            break;
+	case 'g':
+	    file_names[6] = optarg;
+            flags[6] = true;
+            break;
+	case 'h':
+	    file_names[7] = optarg;
+            flags[7] = true;
+            break;
+        case '?':
+            break;
+        default:
+            printf ("?? getopt returned character code 0%o ??\n", c);
+        }
+    }
+
+    if (optind < argc) {
+        printf ("non-option ARGV-elements: ");
+        while (optind < argc)
+            printf ("%s ", argv[optind++]);
+        printf ("\n");
+    }
     
+    if(flags[0] & flags[1]){
+        //we have to load from given corpus
+        populate_word_list(string(file_names[0]));
+	populate_corpus(string(file_names[1]));
+    }
+    else if(flags[4]){
+	build_umap(string(file_names[4]));
+    }
+    
+    if(flags[3]){
+	serialize_umap(string(file_names[3]));
+    }
+    
+    if(flags[2]){
+	update_confusion_mat(string(file_names[2]));
+    }
+    
+    if(flags[5]){
+	//get the file name having n gram and counts
+	//cout << "the file name having n gram and counts\n";
+	
+	ifstream ip_data_file(file_names[5]);
+	int _i = 2;
+	
+	if(ip_data_file.is_open()) {
+	    while(ip_data_file.good()) {
+
+		string f_name;
+		
+		ip_data_file>>f_name;
+		build_ngram(f_name,_i);
+		_i++;
+	    }
+	    ip_data_file.close();
+	}
+    }
+    else if(flags[6]){
+	// get the name of files with hash table
+	//cout << "the name of files with hash table\n";
+	ifstream ip_data_file(file_names[5]);
+	int _i = 2;
+	
+	if(ip_data_file.is_open()) {
+	    while(ip_data_file.good()) {
+
+		string f_name;
+		
+		ip_data_file>>f_name;
+		load_serialized_ngram(f_name,_i);
+		_i++;
+	    }
+	    ip_data_file.close();
+	}
+    }
+    
+    if(flags[7]){
+	//get names of files where to dump to
+	//cout << "names of files where to dump to\n";
+	ifstream ip_data_file(file_names[5]);
+	int _i = 2;
+	
+	if(ip_data_file.is_open()) {
+	    while(ip_data_file.good()) {
+
+		string f_name;
+		
+		ip_data_file>>f_name;
+		serialize_ngram(f_name,_i);
+		_i++;
+	    }
+	    ip_data_file.close();
+	}
+    }
+    
+    phrase_corrector();
+    exit (0);
+}
+
+void phrase_corrector(){
+    
+    cout<<"enter the number strings and enter each string:\n";
     int N;// number of inputs
+    cin >> N;
     
     while(N--){
       
 	//the input
-	char phrase[1024];// original string
+	char phrase[2048];// = {0};// original string
+	string str_phrase;
+	//cin.read(phrase,2047);// reading into a fixed buffer
+	//cin >> phrase; - this fails
+	cin.clear(); cin.ignore(INT_MAX,'\n'); //clearing the input buffers!!
+	
+	getline(cin,str_phrase);
+	strncpy(phrase, str_phrase.c_str(), sizeof(phrase));
+	phrase[sizeof(phrase) - 1] = 0;
+	
+	cout << " : ";
+	
 	vector<string> tok_phrase;// tokenized by space strings
 	
 	//tokenize
 	char *ind_tok = strtok(phrase, " ");//getting tokens
-	while (ind_tok) {
+	do{
+	    if(ind_tok != NULL){
+		tok_phrase.push_back(string(ind_tok));
+	    }
 	    ind_tok = strtok(NULL, " ");
-	    tok_phrase.push_back(ind_tok);
-	}
+	    
+	}while (ind_tok != NULL);
 	
 	//find the error word
 	vector<string> possibs;// possible correct strings
@@ -91,10 +251,10 @@ int main(){
 	    
 	    int i,j = 0;
 	    for(i = ranked_list.size()-1; i >= 0; i--) {
-		
-		err_index = ix;
+		  
 		found_wrong = true;
-		
+		err_index = ix;
+	      
 		if((score_list[i] > REQ_TRESH) || (j < MAX_CHOICE)) {
 		    possibs.push_back(ranked_list.at(i));
 		    j++;
@@ -107,29 +267,31 @@ int main(){
 	}
 	
 	//finding the correct choices
-	int idx;
-	for(idx = 0;idx < possibs.size();idx++){
-	    tok_phrase.at(err_index) = possibs.at(idx);
+	if(found_wrong){
+	    int idx;
+	    for(idx = 0;idx < possibs.size();idx++){
+		tok_phrase.at(err_index) = possibs.at(idx);
+		
+		//generate n grams and get score
+		scores.push_back(generate_score(tok_phrase,err_index));
+	    }
 	    
-	    //generate n grams and get score
-	    scores.push_back(generate_score(tok_phrase,err_index));
-	}
-	
-	int max_idx = get_max_element<double>(scores);//??
-	
-	if(max_idx == -1){
-	    //error could not find anything!
-	    cout << " !!! no solutions fond :/\n";
+	    int max_idx = get_max_element<double>(scores);//gets one with highest score
+	    
+	    if(max_idx == -1){
+		//error could not find anything!
+		cout << " !!! no solutions fond :/\n";
+	    }
+	    else{
+		//found something!
+		tok_phrase.at(err_index) = possibs.at(max_idx);
+		cout << gen_combined_toks(tok_phrase,0,tok_phrase.size()-1) << "\n";
+	    }
 	}
 	else{
-	    //found something!
-	    tok_phrase.at(err_index) = possibs.at(max_idx);
-	    cout << gen_combined_toks(tok_phrase,0,tok_phrase.size()-1) << "\n";
+	    cout << "Correct phrase\n";
 	}
-	
     }
-    
-    return 0;
 }
 
 template <class T>
@@ -151,6 +313,7 @@ int get_max_element(vector<T> elems){
     }
 }
 
+// DUMMY no use
 template <class T>
 int compare_vals (T *a, T *b){
     //const double *da = (const double *) a;
@@ -205,7 +368,7 @@ string gen_combined_toks(vector<string> new_phrase,int start_idx,int end_idx){
 double get_score(string sub_phrase,int num_tok){
     unordered_map<string,int>::iterator got_elem;// = word_list.find(name);
     unordered_map<string,int>::iterator end_elem;
-    double score = -1.0;
+    double score = 1.0;
     
     switch(num_tok){
         case 2: got_elem = gram2_list.find(sub_phrase);end_elem = gram2_list.end();break;
@@ -218,6 +381,9 @@ double get_score(string sub_phrase,int num_tok){
 
 	score = (double)got_elem->second;
 	return log2(score);
+    }
+    else {
+	return -1E6;
     }
 }
 
@@ -244,6 +410,30 @@ void build_ngram(string fname,int gram_val){
 	    }
 	    
 	    switch(gram_val){
+	      case 2: gram2_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
+	      case 3: gram3_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
+	      case 4: gram4_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
+	      case 5: gram5_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
+	    }
+            
+        }
+        map_file.close();
+    }
+}
+
+void load_serialized_ngram(string fname,int ngram){
+    ifstream map_file(fname);
+    
+    if(map_file.is_open()) {
+        while(map_file.good()) {
+
+            string name;
+            int count_word;
+
+            map_file>>count_word;
+	    map_file>>name;
+	    
+	    switch(ngram){
 	      case 2: gram2_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
 	      case 3: gram3_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
 	      case 4: gram4_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
