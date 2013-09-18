@@ -165,7 +165,7 @@ int main(int argc,char** argv){
     else if(flags[6]){
 	// get the name of files with hash table
 	//cout << "the name of files with hash table\n";
-	ifstream ip_data_file(file_names[5]);
+	ifstream ip_data_file(file_names[6]);
 	int _i = 2;
 	
 	if(ip_data_file.is_open()) {
@@ -184,7 +184,7 @@ int main(int argc,char** argv){
     if(flags[7]){
 	//get names of files where to dump to
 	//cout << "names of files where to dump to\n";
-	ifstream ip_data_file(file_names[5]);
+	ifstream ip_data_file(file_names[7]);
 	int _i = 2;
 	
 	if(ip_data_file.is_open()) {
@@ -217,6 +217,7 @@ void phrase_corrector(){
 	string str_phrase;
 	//cin.read(phrase,2047);// reading into a fixed buffer
 	//cin >> phrase; - this fails
+	cout << "New word :: ";
 	cin.clear(); cin.ignore(INT_MAX,'\n'); //clearing the input buffers!!
 	
 	getline(cin,str_phrase);
