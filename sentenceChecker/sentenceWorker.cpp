@@ -366,10 +366,33 @@ double generate_score(vector<string> new_phase,int err_index){
     double score = 0.0;
     int num_tok = new_phase.size();
     
+    char* POSTstring;// to fill this up!
+    string stringToTag = "java -classpath java/:java/stanford-postagger.jar tagSentence 1 "+gen_combined_toks(new_phase,0,num_tok-1)+" > def_file";
+    system(stringToTag.c_str());
     /* TODO:  ADD the POSTagger here !!!
      */
+    ifstream map_file("def_file");
     
+    if(map_file.is_open()) {
+	string filedata;
+        
+	getline(map_file,filedata);
+	getline(map_file,filedata);
+	
+	POSTstring = (char*)filedata.c_str();
+    }
+   
     vector<string> POSTagger;//has tags for each word !!
+    
+    //tokenize
+    char *ind_tok = strtok(POSTstring, " ");//getting tokens
+    do{
+	if(ind_tok != NULL){
+	    POSTagger.push_back(string(ind_tok));
+	}
+	ind_tok = strtok(NULL, " ");
+	
+    }while (ind_tok != NULL);
     
     for(int i = 2;i <=5;i++){
 	for(int j = 0;j < i;j++){
