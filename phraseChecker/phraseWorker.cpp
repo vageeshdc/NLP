@@ -206,7 +206,7 @@ int main(int argc,char** argv){
 
 void get_stringip(char* var,int len){
     char c;
-    c = getchar(); // safety ops!!
+    //c = getchar(); // safety ops!!
     int idx = 0;
     while(idx < len-1){
 	c = getchar();
@@ -231,24 +231,29 @@ void phrase_corrector(){
     while(N--){
       
 	//the input
-	char phrase[2048];// = {0};// original string
+	char phrase_[2048];// = {0};// original string
+	char phrase[2048];
 	string str_phrase;
 	//cin.read(phrase,2047);// reading into a fixed buffer
 	//cin >> phrase; - this fails
-	cout << "New word :: ";
+	cout << "\nNew word :: ";
 	//cin.clear(); cin.ignore(INT_MAX,'\n'); //clearing the input buffers!!
 	
 	//getline(cin,str_phrase);
 	//strncpy(phrase, str_phrase.c_str(), sizeof(phrase));
 	//phrase[sizeof(phrase) - 1] = 0;
-	get_stringip(phrase,2048);
+	get_stringip(phrase_,2048);
 	
-	if(strlen(phrase) == 0){
+	if(strlen(phrase_) == 0){
 	    cout << "Empty word\n";
 	    continue;
 	}
 	
-	cout << " : ";
+	string name = string(phrase_);
+	//have some things here
+	strcpy(phrase,phrase_);
+	
+	cout << " : ";// << phrase << "::\n";
 	
 	vector<string> tok_phrase;// tokenized by space strings
 	
@@ -256,7 +261,16 @@ void phrase_corrector(){
 	char *ind_tok = strtok(phrase, " ");//getting tokens
 	do{
 	    if(ind_tok != NULL){
-		tok_phrase.push_back(string(ind_tok));
+	        string tmp_str_tok = string(ind_tok);
+		
+		char chars_[] = "\'() ,.-;!?\n\"";
+		for (unsigned int i = 0; i < strlen(chars_); ++i)
+		{
+		    tmp_str_tok.erase (remove(tmp_str_tok.begin(), tmp_str_tok.end(), chars_[i]), tmp_str_tok.end());
+		}
+	        transform(tmp_str_tok.begin(), tmp_str_tok.end(), tmp_str_tok.begin(), ::tolower);
+		tok_phrase.push_back(tmp_str_tok);
+		
 	    }
 	    ind_tok = strtok(NULL, " ");
 	    
@@ -280,7 +294,7 @@ void phrase_corrector(){
 		found_wrong = true;
 		err_index = ix;
 	      
-		if((score_list[i] > REQ_TRESH) || (j < MAX_CHOICE)) {
+		if((score_list[i] > REQ_TRESH) || (j <= MAX_CHOICE)) {
 		    possibs.push_back(ranked_list.at(i));
 		    j++;
 		}
@@ -314,7 +328,7 @@ void phrase_corrector(){
 	    }
 	}
 	else{
-	    cout << "Correct phrase\n";
+	    cout << phrase_;
 	}
     }
 }
@@ -360,14 +374,15 @@ double generate_score(vector<string> new_phase,int err_index){
 	    
 	    if(inrange(0,num_tok-1,s_idx) && inrange(0,num_tok-1,e_idx)){
 		string q_string = gen_combined_toks(new_phase,s_idx,e_idx);
-		
+		//cout << "N gram : idx :: " << i <<" : " << j << ":: =" << q_string <<" :: ";
 		//retieve string
 		double tmp_score = get_score(q_string,i);
-		score += (tmp_score < 0)?0.0:tmp_score;
+		cout << "score = " << tmp_score <<"\n";
+		//score += (tmp_score < 0)?0.0:tmp_score;
 	    }
 	}
     }
-    
+    //cout << "Over all score = " << score <<"\n";
     return score;
 }
 
@@ -427,12 +442,23 @@ void build_ngram(string fname,int gram_val){
 	    for(int i = 0;i < gram_val;i++){
 		string tmp_name;
 		map_file >> tmp_name;
+		
+		char chars_[] = "\'() ,.-;!?\n\"";
+		for (unsigned int i = 0; i < strlen(chars_); ++i)
+		{
+		    tmp_name.erase (remove(tmp_name.begin(), tmp_name.end(), chars_[i]), tmp_name.end());
+		}
+	        transform(tmp_name.begin(), tmp_name.end(), tmp_name.begin(), ::tolower);
+		
 		name.append(tmp_name);
 		
 		if(i < gram_val -1){
 		    name.append(" ");
 		}
 	    }
+	    
+	    //if(gram_val == 4)
+	    //  cout << "key ops " << count_word << ":" << name <<"\n";
 	    
 	    switch(gram_val){
 	      case 2: gram2_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
@@ -456,7 +482,20 @@ void load_serialized_ngram(string fname,int ngram){
             int count_word;
 
             map_file>>count_word;
-	    map_file>>name;
+	    //map_file>>name;
+	    
+	    for(int i = 0;i < ngram;i++){
+		string tmp_name;
+		map_file >> tmp_name;
+		name.append(tmp_name);
+		
+		if(i < ngram -1){
+		    name.append(" ");
+		}
+	    }
+	    
+	    //if(ngram == 4)
+	    //  cout << "key ops " << count_word << ":" << name <<"\n";
 	    
 	    switch(ngram){
 	      case 2: gram2_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
@@ -486,6 +525,8 @@ void serialize_ngram(string fname,int ngram){
     if(map_file.is_open()) {
         for(; map_elem != end_elem; map_elem++) {
             map_file<<map_elem->second<<" "<<map_elem->first<<"\n";
+	    //if(ngram == 4)
+	    //  cout <<map_elem->second<<" "<<map_elem->first<<"\n";
         }
         map_file.close();
     }
