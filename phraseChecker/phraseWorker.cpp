@@ -374,15 +374,15 @@ double generate_score(vector<string> new_phase,int err_index){
 	    
 	    if(inrange(0,num_tok-1,s_idx) && inrange(0,num_tok-1,e_idx)){
 		string q_string = gen_combined_toks(new_phase,s_idx,e_idx);
-		//cout << "N gram : idx :: " << i <<" : " << j << ":: =" << q_string <<" :: ";
+		cout << "N gram : idx :: " << i <<" : " << j << ":: =" << q_string <<" :: ";
 		//retieve string
 		double tmp_score = get_score(q_string,i);
 		cout << "score = " << tmp_score <<"\n";
-		//score += (tmp_score < 0)?0.0:tmp_score;
+		score += (tmp_score < 0)?0.0:tmp_score;
 	    }
 	}
     }
-    //cout << "Over all score = " << score <<"\n";
+    cout << "Over all score = " << score <<"\n";
     return score;
 }
 

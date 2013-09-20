@@ -197,7 +197,7 @@ void insert_new_word(string name) {
     if(got_elem == word_list.end()) {
         //element not there
         //inserting
-        word_list[name] = 0;
+        word_list[name] = 1;
     }
 }
 
