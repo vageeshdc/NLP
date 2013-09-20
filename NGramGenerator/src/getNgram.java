@@ -40,7 +40,7 @@ public class getNgram {
 		
 		String match = "hello world how* are. you! ! world hello";
 		
-		String inputfilename = "config_files/distinctInput1.txt";	
+		String inputfilename = "wikipedia2text.txt";	
 		String outputfilename = "config_files/distinctOutput.txt";	
 		
 		FileOutputStream out=new FileOutputStream(outputfilename);

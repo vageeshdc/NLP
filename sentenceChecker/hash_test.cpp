@@ -109,7 +109,7 @@ void solve_test_cases(string name) {
     {
 	name.erase (remove(name.begin(), name.end(), chars_[i]), name.end());
     }
-
+    transform(name.begin(), name.end(), name.begin(), ::tolower);
     //perform the search;
     unordered_map<string,int>::iterator got_elem = word_list.find(name);
     if(got_elem == word_list.end()) {
@@ -121,6 +121,7 @@ void solve_test_cases(string name) {
 
     }
 }
+
 
 void generate_top_opts() {
 
@@ -178,6 +179,8 @@ void build_umap(string fname) {
             int count_word;
 
             map_file>>name>>count_word;
+	    
+	    //transform(name.begin(), name.end(), name.begin(), ::tolower);
 	    tot_word_count += count_word;
 	    
             word_list.insert(unordered_map<string,int>::value_type(name,count_word));
@@ -226,6 +229,7 @@ void populate_word_list(string fname) {
 	    }
 	    */
 	    tmp.erase (remove(tmp.begin(), tmp.end(), '\''),tmp.end());
+	    transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
 	    
             insert_new_word(tmp);
         }
@@ -260,7 +264,7 @@ void populate_corpus(string fname) {
 		    {
 			tmp_.erase (remove(tmp_.begin(), tmp_.end(), chars_[i]), tmp_.end());
 		    }
-			
+		    transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
 		    set_word_freq(tmp_);
 		    tot_word_count++;
 		}
