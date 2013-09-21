@@ -37,6 +37,7 @@ struct error_pairs {
 extern unordered_map<string,int> word_list;
 
 extern double var_val;
+//word counts
 extern int tot_word_count;
 
 extern vector<double> score_list;
@@ -104,6 +105,7 @@ double generate_score(vector<string> new_phase,int err_index);
 string gen_combined_toks(vector<string> new_phrase,int start_idx,int end_idx);
 bool inrange(int start,int end,int q_idx);
 double get_score(string sub_phrase,int num_tok);
+double get_backoff_score(string sub_phrase,int num_tok);// back off implementation
 template <class T> int get_max_element(vector<T> elems);
 template <class T> int compare_vals (const void *a, const void *b);//for double value comparision
 void build_ngram(string fname,int gram_val);

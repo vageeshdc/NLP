@@ -11,6 +11,16 @@ unordered_map<string,int> gram3_list;
 unordered_map<string,int> gram4_list;
 unordered_map<string,int> gram5_list;
 
+int tot_2g_count = 0;
+int tot_3g_count = 0;
+int tot_4g_count = 0;
+int tot_5g_count = 0;
+
+// Good Turing smooth values all to log base 2 caluations
+#define slope -1.5136
+#define intercept 15.9537
+#define k_backoff 2
+
 /*
 static int callback(void *data, int argc, char **argv, char **azColName){
    int i;
@@ -376,12 +386,21 @@ double generate_score(vector<string> new_phase,int err_index){
 		string q_string = gen_combined_toks(new_phase,s_idx,e_idx);
 		cout << "N gram : idx :: " << i <<" : " << j << ":: =" << q_string <<" :: ";
 		//retieve string
-		double tmp_score = get_score(q_string,i);
+		double tmp_score = get_backoff_score(q_string,i);
 		cout << "score = " << tmp_score <<"\n";
-		score += (tmp_score < 0)?0.0:tmp_score;
+		score += (tmp_score < 0)?0.0:i*tmp_score;
 	    }
 	}
     }
+    
+    //uni gram score
+    unordered_map<string,int>::iterator got_elem = word_list.find(new_phase.at(err_index));
+
+    if(got_elem != word_list.end()) {
+        //element is present
+        score += intercept + (log2(word_list[new_phase.at(err_index)])*slope);
+    }
+    
     cout << "Over all score = " << score <<"\n";
     return score;
 }
@@ -405,6 +424,68 @@ string gen_combined_toks(vector<string> new_phrase,int start_idx,int end_idx){
     return combined_t;
 }
 
+double get_backoff_score(string sub_phrase,int num_tok){
+    
+    if(num_tok > 2){
+	
+	double alpha = 0.1;//have to compute alpha
+	int l_idx = sub_phrase.find_last_of(' ');
+	
+	string bk_string = sub_phrase.substr(0,l_idx);
+	
+	unordered_map<string,int>::iterator single_word = word_list.begin();
+	unordered_map<string,int>::iterator search_word;
+	unordered_map<string,int> *prev_end_word;
+	unordered_map<string,int> *end_word;
+	
+	int tot_grm_cnt;
+	
+	switch(num_tok){
+	    case 3: tot_grm_cnt = tot_2g_count;end_word = &gram3_list;prev_end_word = &gram2_list;break;
+	    case 4: tot_grm_cnt = tot_3g_count;end_word = &gram4_list;prev_end_word = &gram3_list;break;
+	    case 5: tot_grm_cnt = tot_4g_count;end_word = &gram5_list;prev_end_word = &gram4_list;break;
+	}
+	
+	int sum_ngram = 0;
+	
+	while(single_word != word_list.end()){
+	    string new_gram = bk_string + " " +single_word->first;
+	    
+	    //find in higher n gram
+	    search_word = end_word->find(new_gram);
+	    if(search_word != end_word->end()){
+		if(search_word->second >= k_backoff){
+		    sum_ngram += search_word->second;
+		}
+	    }
+	    single_word++;
+	}
+	
+	double count_n_1 = 5.0;
+	search_word = prev_end_word->find(bk_string);
+	if(search_word != prev_end_word->end()){
+	    count_n_1 = search_word->second;
+	}
+	
+	alpha = (1.0 - ((double)count_n_1/ (double)count_n_1))/(1.0 - ((double)count_n_1 /(double) tot_grm_cnt));
+	
+	double no_bk_score = get_score(sub_phrase,num_tok);
+	if(no_bk_score > slope*k_backoff + intercept){
+	    
+	    return log2(alpha) + no_bk_score;
+	}
+	else{
+	    int idx = sub_phrase.find_first_of(' ');
+	    
+	    return log2(1- alpha) + get_backoff_score( sub_phrase.substr(idx) ,num_tok-1);
+	}
+    }
+    else{
+	
+	return get_score(sub_phrase,num_tok);
+    }
+}
+
 double get_score(string sub_phrase,int num_tok){
     unordered_map<string,int>::iterator got_elem;// = word_list.find(name);
     unordered_map<string,int>::iterator end_elem;
@@ -419,8 +500,8 @@ double get_score(string sub_phrase,int num_tok){
     
     if(got_elem != end_elem) {
 
-	score = (double)got_elem->second;
-	return log2(score);
+	//score = intercept + slope*(log2((double)got_elem->second)); // smoothing using good turing
+	return score;
     }
     else {
 	return -1E6;
@@ -431,14 +512,24 @@ void build_ngram(string fname,int gram_val){
 
     ifstream map_file(fname);
     
+    unordered_map<string,int>::iterator map_elem;// = word_list.begin();
+    unordered_map<string,int>::iterator end_elem;
+    unordered_map<string,int> *tmp_map;
+    int* gram_counter;
+    
+    switch(gram_val){
+        case 2: gram_counter = &tot_2g_count;map_elem = gram2_list.begin();end_elem = gram2_list.end();tmp_map = &gram2_list;break;
+        case 3: gram_counter = &tot_3g_count;map_elem = gram3_list.begin();end_elem = gram3_list.end();tmp_map = &gram3_list;break;
+        case 4: gram_counter = &tot_4g_count;map_elem = gram4_list.begin();end_elem = gram4_list.end();tmp_map = &gram4_list;break;
+        case 5: gram_counter = &tot_5g_count;map_elem = gram5_list.begin();end_elem = gram5_list.end();tmp_map = &gram5_list;break;
+    }
+    
     if(map_file.is_open()) {
         while(map_file.good()) {
 
             string name;
             int count_word;
 
-            map_file>>count_word;
-	    
 	    for(int i = 0;i < gram_val;i++){
 		string tmp_name;
 		map_file >> tmp_name;
@@ -457,16 +548,18 @@ void build_ngram(string fname,int gram_val){
 		}
 	    }
 	    
+	    map_file>>count_word;
+	    (*gram_counter) += count_word;
 	    //if(gram_val == 4)
 	    //  cout << "key ops " << count_word << ":" << name <<"\n";
+	    map_elem = tmp_map->find(name);
 	    
-	    switch(gram_val){
-	      case 2: gram2_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
-	      case 3: gram3_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
-	      case 4: gram4_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
-	      case 5: gram5_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
+	    if(map_elem != end_elem){
+		(*tmp_map)[name] += count_word;
 	    }
-            
+	    else{
+		tmp_map->insert(unordered_map<string,int>::value_type(name,count_word));
+	    }
         }
         map_file.close();
     }
@@ -498,10 +591,10 @@ void load_serialized_ngram(string fname,int ngram){
 	    //  cout << "key ops " << count_word << ":" << name <<"\n";
 	    
 	    switch(ngram){
-	      case 2: gram2_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
-	      case 3: gram3_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
-	      case 4: gram4_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
-	      case 5: gram5_list.insert(unordered_map<string,int>::value_type(name,count_word));break;
+	      case 2: gram2_list.insert(unordered_map<string,int>::value_type(name,count_word));tot_2g_count += count_word;break;
+	      case 3: gram3_list.insert(unordered_map<string,int>::value_type(name,count_word));tot_3g_count += count_word;break;
+	      case 4: gram4_list.insert(unordered_map<string,int>::value_type(name,count_word));tot_4g_count += count_word;break;
+	      case 5: gram5_list.insert(unordered_map<string,int>::value_type(name,count_word));tot_5g_count += count_word;break;
 	    }
             
         }
