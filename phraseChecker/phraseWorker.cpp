@@ -400,7 +400,7 @@ double generate_score(vector<string> new_phase,int err_index){
 
     if(got_elem != word_list.end()) {
         //element is present
-        score += (1- W_V[0])*(intercept + (log2(word_list[new_phase.at(err_index)])*slope));
+        score += (1- W_V[0])*( (intercept + (log2(word_list[new_phase.at(err_index)])*slope)) -  log2(tot_word_count));
     }
     
     cout << "Over all score = " << score <<"\n";
@@ -430,7 +430,7 @@ double get_backoff_score(string sub_phrase,int num_tok){
     
     if(num_tok > 2){
 	
-	double alpha = 0.1;//have to compute alpha
+	double alpha = 1E-6;//have to compute alpha -- have a basic count
 	int l_idx = sub_phrase.find_last_of(' ');
 	
 	string bk_string = sub_phrase.substr(0,l_idx);
@@ -466,10 +466,10 @@ double get_backoff_score(string sub_phrase,int num_tok){
 	double count_n_1 = 5.0;
 	search_word = prev_end_word->find(bk_string);
 	if(search_word != prev_end_word->end()){
-	    count_n_1 = search_word->second;
+	    count_n_1 += search_word->second;
 	}
 	
-	alpha = (1.0 - ((double)count_n_1/ (double)count_n_1))/(1.0 - ((double)count_n_1 /(double) tot_grm_cnt));
+	alpha += (1.0 - ((double)sum_ngram/ (double)count_n_1)) / (1.0 - ((double)sum_ngram /(double) tot_word_count));
 	
 	double no_bk_score = get_score(sub_phrase,num_tok);
 	if(no_bk_score > slope*k_backoff + intercept){
@@ -479,7 +479,7 @@ double get_backoff_score(string sub_phrase,int num_tok){
 	else{
 	    int idx = sub_phrase.find_first_of(' ');
 	    
-	    return log2(1- alpha) + get_backoff_score( sub_phrase.substr(idx) ,num_tok-1);
+	    return log2(fabs(1- alpha)) + get_backoff_score( sub_phrase.substr(idx) ,num_tok-1);
 	}
     }
     else{
@@ -492,19 +492,26 @@ double get_score(string sub_phrase,int num_tok){
     unordered_map<string,int>::iterator got_elem;// = word_list.find(name);
     unordered_map<string,int>::iterator end_elem;
     double score = 1.0;
+    int n_word_count = 0;
     
     switch(num_tok){
-        case 2: got_elem = gram2_list.find(sub_phrase);end_elem = gram2_list.end();break;
-        case 3: got_elem = gram3_list.find(sub_phrase);end_elem = gram3_list.end();break;
-        case 4: got_elem = gram4_list.find(sub_phrase);end_elem = gram4_list.end();break;
-        case 5: got_elem = gram5_list.find(sub_phrase);end_elem = gram5_list.end();break;
+        case 2: n_word_count = tot_2g_count;got_elem = gram2_list.find(sub_phrase);end_elem = gram2_list.end();break;n_word_count = tot_2g_count;
+        case 3: n_word_count = tot_3g_count;got_elem = gram3_list.find(sub_phrase);end_elem = gram3_list.end();break;
+        case 4: n_word_count = tot_4g_count;got_elem = gram4_list.find(sub_phrase);end_elem = gram4_list.end();break;
+        case 5: n_word_count = tot_5g_count;got_elem = gram5_list.find(sub_phrase);end_elem = gram5_list.end();break;
     }
-    
+    cout << "get score count" << n_word_count <<"\n";
     if(got_elem != end_elem) {
 
 	double count_of_ng = (double)got_elem->second;
-	score = log2(count_of_ng +1 ) + slope*(log2(count_of_ng + 1.0) - log2(count_of_ng)); // smoothing using good turing
-	return score;
+	    if(count_of_ng > 0){
+	    score = log2(count_of_ng +1 ) + slope*(log2(count_of_ng + 1.0) - log2(count_of_ng)); // smoothing using good turing
+	    score -= log2(n_word_count);
+	    return score;
+	}
+	else{
+	    return -1E6;
+	}
     }
     else {
 	return -1E6;
