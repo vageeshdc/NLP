@@ -28,6 +28,13 @@ void insert_new_word(string name);
 void set_word_freq(string name);
 void populate_word_list(string fname);
 void populate_corpus(string fname);
+string gen_combined_toks(vector<string> new_phrase,int start_idx,int end_idx);
+
+//GT test
+void GT_test();
+
+// the EM step for weighting
+void EM_test(string file_name);
 
 #define MAX_SIZ 20000
 
@@ -42,6 +49,16 @@ int main(int argc,char** argv){
     load_serialized_ngram(argv[5],4);    // 4 gram
     load_serialized_ngram(argv[6],5);    // 5 gram
     
+    //calling the GT turing test
+    //GT_test();
+    
+    //calling EM_test
+    EM_test(string(argv[2])); // argv[2] is used here
+    
+    return 0;
+}
+
+void GT_test(){
     //init stage
     for(int i = 0;i < MAX_SIZ;i++){
 	GT_basic_count[i] = 0;
@@ -91,10 +108,114 @@ int main(int argc,char** argv){
 	  cout << i << " " << log2(i) << " " << GT_basic_count[i] << " " <<log2(GT_basic_count[i]) << "\n";
 	}
     }
-    
-    return 0;
 }
 
+void EM_test(string file_name){
+    ifstream infile(file_name);
+    //tot_word_count = 0;
+    vector<string> history_words;
+    
+    
+    if(infile.is_open()) {
+      
+	int first5 = 4;
+	
+        while(infile.good()) {
+            string tmp;
+            infile >> tmp;
+	    
+	    char chars[] = "() ,.-;!?\n\"";
+	    char* tmp_name = (char*)tmp.c_str();
+	    char * pch = strtok (tmp_name,chars);
+	    
+	    while (pch != NULL)
+	    {
+		pch = strtok (NULL,chars);
+		
+		if(pch != 0){
+		    //printf("%s\n",pch);
+		    string tmp_ = string(pch);
+		    
+		    char chars_[] = "\'() ,.-;!?\n\"";
+		    for (unsigned int i = 0; i < strlen(chars_); ++i)
+		    {
+			tmp_.erase (remove(tmp_.begin(), tmp_.end(), chars_[i]), tmp_.end());
+		    }
+		    transform(tmp_.begin(), tmp_.end(), tmp_.begin(), ::tolower);
+		    
+		    //adding here..
+		    if(first5 > 0){
+			history_words.push_back(tmp_);
+			first5--;
+		    }
+		    else{
+		      
+			//cout << " ====== \n";
+			
+			//do the operations here...
+			history_words.push_back(tmp_);
+			
+			unordered_map<string,int>::iterator g_count;
+			unordered_map<string,int> *ref_map;
+			//g_count = word_list.find(gen_combined_toks(history_words,4,4));
+			g_count = word_list.find(tmp_);
+			
+			int count_val[] = {0,0,0,0,0};
+			int set_count = 0;
+			
+			if(g_count != word_list.end()){
+			    count_val[0] = g_count->second;
+			    set_count++;
+			}
+			else{
+			    count_val[0] = 0;
+			}
+			//cout << tmp_ << " ";
+			
+			int ix_;
+			for(ix_ = 2;ix_ <6;ix_++){
+			    switch(ix_){
+				case 2:ref_map = &gram2_list;break;
+				case 3:ref_map = &gram3_list;break;
+				case 4:ref_map = &gram4_list;break;
+				case 5:ref_map = &gram5_list;break;
+			    }
+			    
+			    g_count = ref_map->find(gen_combined_toks(history_words,5-ix_,4));
+			    
+			    //cout << gen_combined_toks(history_words,5-ix_,4) << " ";
+			    
+			    if(g_count != ref_map->end()){
+				set_count++;
+				count_val[ix_ -1] = g_count->second;
+			    }
+			    else{
+				count_val[ix_ -1] = 0;
+			    }
+			}
+			
+			if(set_count >= 1){
+			    int ixd_;
+			    for(ixd_ = 0;ixd_ <5;ixd_++){
+				cout << count_val[ixd_] << " ";
+			    }
+			    cout << "\n";
+			}
+			
+			// the moving window seen here
+			int idx_;
+			for(idx_ = 0;idx_ < 4;idx_++){
+			    history_words[idx_] = history_words[idx_+1];
+			}
+			history_words.pop_back();
+		    }
+		}
+	    }
+	    
+        }
+        infile.close();
+    }    
+}
 
 void insert_new_word(string name) {
 
@@ -274,3 +395,17 @@ void load_serialized_ngram(string fname,int ngram){
     }
 }
 
+string gen_combined_toks(vector<string> new_phrase,int start_idx,int end_idx){
+    
+    string combined_t;
+    
+    for(int idx = start_idx;idx <= end_idx;idx++){
+	combined_t.append(new_phrase.at(idx));
+	
+	if(idx < end_idx){
+	    combined_t.append(" ");
+	}
+    }
+    
+    return combined_t;
+}

@@ -264,7 +264,7 @@ void populate_corpus(string fname) {
 		    {
 			tmp_.erase (remove(tmp_.begin(), tmp_.end(), chars_[i]), tmp_.end());
 		    }
-		    transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+		    transform(tmp_.begin(), tmp_.end(), tmp_.begin(), ::tolower);
 		    set_word_freq(tmp_);
 		    tot_word_count++;
 		}

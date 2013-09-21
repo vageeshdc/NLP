@@ -11,6 +11,8 @@ unordered_map<string,int> gram3_list;
 unordered_map<string,int> gram4_list;
 unordered_map<string,int> gram5_list;
 
+double W_V[] = {0.6160,0.3838,0.0001,0.0000,0.0000};
+
 int tot_2g_count = 0;
 int tot_3g_count = 0;
 int tot_4g_count = 0;
@@ -388,7 +390,7 @@ double generate_score(vector<string> new_phase,int err_index){
 		//retieve string
 		double tmp_score = get_backoff_score(q_string,i);
 		cout << "score = " << tmp_score <<"\n";
-		score += (tmp_score < 0)?0.0:i*tmp_score;
+		score += (1- W_V[i-1])*tmp_score; //need to improve on the weighting of the ngrams
 	    }
 	}
     }
@@ -398,7 +400,7 @@ double generate_score(vector<string> new_phase,int err_index){
 
     if(got_elem != word_list.end()) {
         //element is present
-        score += intercept + (log2(word_list[new_phase.at(err_index)])*slope);
+        score += (1- W_V[0])*(intercept + (log2(word_list[new_phase.at(err_index)])*slope));
     }
     
     cout << "Over all score = " << score <<"\n";
@@ -500,7 +502,8 @@ double get_score(string sub_phrase,int num_tok){
     
     if(got_elem != end_elem) {
 
-	//score = intercept + slope*(log2((double)got_elem->second)); // smoothing using good turing
+	double count_of_ng = (double)got_elem->second;
+	score = log2(count_of_ng +1 ) + slope*(log2(count_of_ng + 1.0) - log2(count_of_ng)); // smoothing using good turing
 	return score;
     }
     else {
