@@ -10,8 +10,11 @@ unordered_map<string,int> gram2_list;
 unordered_map<string,int> gram3_list;
 unordered_map<string,int> gram4_list;
 unordered_map<string,int> gram5_list;
+unordered_map<vector<int>,double> multi_list;
+vector<vector<int>> multi_list_pos;
+vector<double> multi_list_score;
 
-double W_V[] = {0.6160,0.3838,0.0001,0.0000,0.0000};
+double W_V[] = {0.6160,0.3838,0.0001,1e-6,1e-6};
 
 int tot_2g_count = 0;
 int tot_3g_count = 0;
@@ -288,6 +291,9 @@ void phrase_corrector(){
 	    
 	}while (ind_tok != NULL);
 	
+	vector<vector<string>> multi_possib;
+	vector<vector<double>> multi_scores;
+	vector<int> multi_err_idx;
 	//find the error word
 	vector<string> possibs;// possible correct strings
 	vector<double> scores;// scores of the possibilities
@@ -297,7 +303,7 @@ void phrase_corrector(){
 	//finding the error!!
 	int ix;
 	bool found_wrong = false;
-	for(ix = 0;((ix < tok_phrase.size())&&(!found_wrong));ix++){
+	for(ix = 0;ix < tok_phrase.size();ix++){
 	    solve_test_cases(tok_phrase.at(ix));
 	    
 	    int i,j = 0;
@@ -315,32 +321,66 @@ void phrase_corrector(){
 		    break;
 		}
 	    }
+	    
+	    if(found_wrong){
+		multi_possib.push_back(possibs);
+		multi_err_idx.push_back(ix);
+		possibs.clear();
+		found_wrong = false;
+	    }
 	}
 	
 	//finding the correct choices
-	if(found_wrong){
-	    int idx;
-	    for(idx = 0;idx < possibs.size();idx++){
-		tok_phrase.at(err_index) = possibs.at(idx);
-		
-		//generate n grams and get score
-		scores.push_back(generate_score(tok_phrase,err_index));
+	if(multi_possib.size() > 0){
+	    vector<int> config;
+	    solve_multi_error(multi_possib,multi_err_idx,0,tok_phrase,config);
+	    
+	    //find max in it
+	    double tmp_max_score = multi_list_score[0];
+	    vector<int> correct_opt = multi_list_pos[0];
+	    
+	    for(int y = 1; y < multi_list_pos.size();y++){
+		if(tmp_max_score < multi_list_score[y]){
+		    tmp_max_score = multi_list_score.at(y);
+		    correct_opt = multi_list_pos.at(y);
+		}
 	    }
 	    
-	    int max_idx = get_max_element<double>(scores);//gets one with highest score
+	    for(int j_ = 0;j_ < correct_opt.size();j_++){
+		tok_phrase.at(multi_err_idx.at(j_)) = multi_possib.at(j_)[correct_opt.at(j_)];
+	    }
 	    
-	    if(max_idx == -1){
-		//error could not find anything!
-		cout << " !!! no solutions fond :/\n";
-	    }
-	    else{
-		//found something!
-		tok_phrase.at(err_index) = possibs.at(max_idx);
-		cout << gen_combined_toks(tok_phrase,0,tok_phrase.size()-1) << "\n";
-	    }
+	    //print the phrase
+	    cout << gen_combined_toks(tok_phrase,0,tok_phrase.size()-1);
 	}
 	else{
 	    cout << phrase_;
+	}
+    }
+}
+
+void solve_multi_error(vector<vector<string >> possib,vector<int> idx,int level,vector<string> err_str,vector<int> config){
+    if(level == idx.size()-1){
+	//no recursion here..
+	int ix_ = 0;
+	for(ix_ = 0;ix_ < possib[level].size();ix_++){
+	    err_str.at(idx[level]) = possib[level].at(ix_);
+	    double gen_score = generate_score(err_str,level);
+	    config.push_back(ix_);
+	    vector<int> config_cpy = config;
+	    //push result here..
+	    multi_list_pos.push_back(config);
+	    multi_list_score.push_back(gen_score);
+	    config.pop_back();
+	}
+    }
+    else{
+	int ix_ = 0;
+	for(ix_ = 0;ix_ < possib[level].size();ix_++){
+	    config.push_back(ix_);
+	    err_str.at(idx[level]) = possib[level].at(ix_);
+	    solve_multi_error(possib,idx,level+1,err_str,config);
+	    config.pop_back();
 	}
     }
 }
@@ -390,7 +430,7 @@ double generate_score(vector<string> new_phase,int err_index){
 		//retieve string
 		double tmp_score = get_backoff_score(q_string,i);
 		cout << "score = " << tmp_score <<"\n";
-		score += (1- W_V[i-1])*tmp_score; //need to improve on the weighting of the ngrams
+		score += -1*log2(W_V[i-1]) + tmp_score; //need to improve on the weighting of the ngrams
 	    }
 	}
     }
@@ -400,7 +440,7 @@ double generate_score(vector<string> new_phase,int err_index){
 
     if(got_elem != word_list.end()) {
         //element is present
-        score += (1- W_V[0])*( (intercept + (log2(word_list[new_phase.at(err_index)])*slope)) -  log2(tot_word_count));
+        score += -1*log2(W_V[0])+( (intercept + (log2(word_list[new_phase.at(err_index)])*slope)) -  log2(tot_word_count));
     }
     
     cout << "Over all score = " << score <<"\n";
@@ -448,7 +488,7 @@ double get_backoff_score(string sub_phrase,int num_tok){
 	    case 5: tot_grm_cnt = tot_4g_count;end_word = &gram5_list;prev_end_word = &gram4_list;break;
 	}
 	
-	int sum_ngram = 0;
+	int sum_ngram = 1;
 	
 	while(single_word != word_list.end()){
 	    string new_gram = bk_string + " " +single_word->first;
@@ -463,7 +503,7 @@ double get_backoff_score(string sub_phrase,int num_tok){
 	    single_word++;
 	}
 	
-	double count_n_1 = 5.0;
+	double count_n_1 = 1.0;
 	search_word = prev_end_word->find(bk_string);
 	if(search_word != prev_end_word->end()){
 	    count_n_1 += search_word->second;
@@ -500,7 +540,7 @@ double get_score(string sub_phrase,int num_tok){
         case 4: n_word_count = tot_4g_count;got_elem = gram4_list.find(sub_phrase);end_elem = gram4_list.end();break;
         case 5: n_word_count = tot_5g_count;got_elem = gram5_list.find(sub_phrase);end_elem = gram5_list.end();break;
     }
-    cout << "get score count" << n_word_count <<"\n";
+    
     if(got_elem != end_elem) {
 
 	double count_of_ng = (double)got_elem->second;

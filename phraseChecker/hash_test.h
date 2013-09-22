@@ -115,5 +115,6 @@ void serialize_ngram(string fname,int ngram);
 void get_stringip(char* var,int len);
 // the correction i/p here
 void phrase_corrector();
+void solve_multi_error(vector<vector<string >> possib,vector<int> idx,int level,vector<string> err_str,vector<int> config);
 
 #endif
